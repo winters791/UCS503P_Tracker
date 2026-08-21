@@ -1,0 +1,163 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{lmodern}
+\usepackage{titlesec}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\setlist{itemsep=2pt, topsep=3pt, leftmargin=1.5em}
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\small\bfseries}{\thesubsubsection}{0.6em}{}
+
+\begin{document}
+
+\begin{center}
+    {\LARGE \textbf{Ops: A Rules-Driven Life-Systems Scheduler \& Retrospective Engine}}\\[0.5em]
+    {\large \textbf{Project Proposal for UCS503P}}\\[0.6em]
+    {\normalsize Thapar Institute of Engineering and Technology}\\[0.8em]
+    
+    \begin{tabular}{cc}
+        \textbf{Udaypratap Singh} (1024030698), CSED & \textbf{Daksh Jand} (1024030936), CSED \\[0.3em]
+        \textbf{Saksham} (1024030332), CSED & \textbf{Raunak Mahajan} (1024030837), CSED
+    \end{tabular}\\[0.8em]
+    
+    {\small August 2026}
+\end{center}
+
+\vspace{0.6em}
+
+\section{Higher-Order Goal}
+\textbf{\textit{...secondary framing}} \\
+This project aims to eliminate cognitive load and planning friction in personal execution by treating time-management as a deterministic, constraint-satisfaction scheduling problem. Rather than relying on passive, unstructured to-do lists that demand constant willpower, the immediate engineering objective is to translate real-world human operating constraints into an automated, interactive, and measurable software dashboard.
+
+\section{Time-to-Value}
+\textbf{\textit{...primary heuristic}} \\
+We prioritize rapid increments and fast feedback over exhaustive speculative design:
+\begin{itemize}
+    \item Deliver the standalone constraint-scheduling engine and interactive 50-minute grid canvas within the first milestone.
+    \item Use weekly iterations backed by automated testing and CI pipelines to validate slotting algorithms and prevent regression.
+    \item Measure practical daily utility immediately on real schedules rather than waiting for an arbitrary end-of-semester milestone.
+\end{itemize}
+
+\section{Problem Statement}
+Individuals face structural failure modes when trying to maintain complex routines (e.g., coursework, skill development, fitness quotas, projects) using standard productivity tools:
+\begin{itemize}
+    \item \textbf{Infinite Horizon Fallacy:} Checkbox lists ignore calendar geometry and treat human capacity as unconstrained, leading to systematic over-commitment and burnout.
+    \item \textbf{High Manual Friction:} Manually rebuilding daily calendars when tasks slip consumes excessive willpower, causing users to abandon time-blocking entirely.
+    \item \textbf{Fragile Streak Metrics:} Traditional habit trackers enforce binary daily streaks; missing a single day invalidates the entire chain, causing disproportionate demoralization.
+    \item \textbf{Lack of Execution Feedback:} Standard calendars do not perform automatic post-hoc reconciliations comparing planned allocations against actual logged execution.
+\end{itemize}
+\textbf{Why this matters now (contextual relevance):} Balancing rigorous engineering curricula with independent technical growth and health demands an automated operational system that optimizes schedule placement dynamically while tolerating real-world disruptions.
+
+\section{Proposed Solution}
+\subsection{Overview \textit{...Software Proposition}}
+Build \textbf{Ops}, a rules-driven, single-user life-operating engine consisting of:
+\begin{itemize}
+    \item \textbf{50-Minute Block Canvas:} Interactive weekly timeline discretized into standard 50-minute focus blocks with built-in transition buffers.
+    \item \textbf{Deterministic Constraint Scheduler:} Automatic engine that slots flexible tasks around fixed calendar constraints according to rule priority and rest buffers.
+    \item \textbf{Rolling Consistency Engine:} Non-punitive tracking tracking weekly volume targets (e.g., 4 gym sessions/week) rather than unbroken daily chains.
+    \item \textbf{Retrospective Generator:} Automated weekly summaries analyzing planned vs. executed blocks and scheduling drift.
+\end{itemize}
+
+\subsection{Core Workflow}
+\begin{enumerate}
+    \item User defines fixed commitments (classes, labs) and recurring target quotas (gym, study blocks).
+    \item Solver generates a validated weekly schedule placing flexible tasks into open capacity.
+    \item User executes blocks and logs completion or performs drag-and-drop manual adjustments.
+    \item At week's end, the system computes compliance rates, maintains aggregate streaks, and highlights scheduling bottlenecks.
+\end{enumerate}
+
+\subsection{Operational Constraints for an Applied Academic Setting}
+\begin{itemize}
+    \item Scope bounded strictly to single-user execution; omit multi-tenant auth and external calendar synchronization to maximize core engine depth.
+    \item Implement the constraint solver as a pure Python algorithm without heavy black-box solver dependencies to preserve algorithmic clarity and testability.
+\end{itemize}
+
+\section{Solution Approach}
+\textbf{\textit{...Engineering focus}} \\
+The engineering focus centers on clean domain modeling, robust state reconciliation, and algorithmic slot allocation.
+
+\subsection{Constraint-Driven Slot Allocation}
+The scheduler operates via a deterministic, multi-pass heuristic:
+\begin{itemize}
+    \item \textbf{Pass 1 (Immutable Constraints):} Map fixed academic events directly onto absolute grid coordinates.
+    \item \textbf{Pass 2 (Quota Placement):} Allocate recurring targets respecting diurnal affinity (e.g., evening gym) and minimum spacing windows.
+    \item \textbf{Pass 3 (Deadline Backtracking):} Schedule one-off deliverables backwards from hard due dates.
+    \item \textbf{Pass 4 (Backlog Filling):} Pack remaining vacant blocks with ranked flexible tasks sorted by urgency-to-capacity ratios.
+\end{itemize}
+
+\subsection{Web Architecture \textit{...web-based solution}}
+\begin{itemize}
+    \item \textbf{Frontend:} React with TypeScript and \texttt{dnd-kit} for accessible, collision-aware block manipulation on a 50-minute grid canvas.
+    \item \textbf{Backend API:} FastAPI (Python 3.12) providing type-safe REST endpoints for schedule generation, commitment definitions, and execution logging.
+    \item \textbf{Persistence:} PostgreSQL / SQLite managed via SQLAlchemy 2.0 and Alembic schema migrations.
+\end{itemize}
+
+\subsection{CI/CD and Delivery Enablers}
+Automated GitHub Actions pipeline running unit test suites across solver constraints, ORM data contracts, and linting on every commit.
+
+\section{Evaluation Criteria}
+\textbf{\textit{...measurable and attributable}}
+
+\subsection{Primary Evaluation Metric}
+\textbf{Schedule Generation \& Re-slot Latency (SGL):} Time required to resolve and populate a 7-day schedule grid with $\ge 40$ constraints.
+\begin{itemize}
+    \item \textbf{Target:} Median $\text{SGL} < 100\text{ ms}$ for real-time interactive canvas re-slotting.
+    \item \textbf{Attribution:} Measured via backend profiling hooks during constraint re-computations.
+\end{itemize}
+
+\subsection{Secondary Evaluation Metrics}
+\begin{itemize}
+    \item \textbf{Weekly Target Compliance Rate:} Proportion of defined weekly recurring quotas successfully completed ($\ge 85\%$ target).
+    \item \textbf{Constraint Collision Rate:} Frequency of hard time overlaps produced by the solver (strictly 0 permissible).
+    \item \textbf{Manual Override Frequency:} Number of manual drag-and-drop adjustments required post-generation to track solver accuracy.
+\end{itemize}
+
+\subsection{Pilot Validation Plan \textit{...high-level}}
+Evaluate the platform across a multi-week active semester test phase, capturing execution logs and comparing scheduled allocations against actual completion rates.
+
+\section{Scalability \& Maintainability}
+\begin{itemize}
+    \item \textbf{Architectural Decoupling:} Clear separation between the pure Python solver module and API transport layer enables isolated benchmarking.
+    \item \textbf{Indexed Relational Queries:} Schema structured with compound indexes on timestamps and status flags to ensure sub-millisecond retrospective aggregations.
+    \item \textbf{Containerized Deployment:} Standardized \texttt{Dockerfile} and \texttt{docker-compose} configuration for zero-setup replication.
+\end{itemize}
+
+\section{Engine Availability Heuristic}
+The project leverages proven, standardized software components:
+\begin{itemize}
+    \item FastAPI and Pydantic v2 for self-documenting, asynchronous REST endpoints.
+    \item SQLAlchemy 2.0 ORM for relational data modeling and migration tracking.
+    \item React 18 with \texttt{dnd-kit} for interactive drag-and-drop layout coordination.
+    \item Pytest framework for property-based constraint verification.
+\end{itemize}
+
+\section{Project Scope and Deliverables}
+\subsection{Initial Deliverable \textit{...first iteration}}
+\begin{itemize}
+    \item Relational schema for commitments, constraint rules, and time blocks.
+    \item Pure Python scheduling module capable of resolving fixed and recurring quotas.
+    \item Basic REST endpoints for commitment ingestion and schedule retrieval.
+    \item Automated CI pipeline enforcing backend unit tests.
+\end{itemize}
+
+\subsection{Subsequent Deliverables \textit{...iteration-friendly}}
+\begin{itemize}
+    \item Interactive React 50-minute block timeline with drag-and-drop override handling.
+    \item Rolling streak and aggregate consistency tracking module.
+    \item Automated end-of-week review dashboard comparing planned vs. logged blocks.
+\end{itemize}
+
+\section{Risks and Mitigations}
+\begin{itemize}
+    \item \textbf{Constraint Deadlocks:} Infeasible constraint combinations handled gracefully via priority fallback queues and unallocated block alerts.
+    \item \textbf{UI Drag-and-Drop Complexity:} Utilize mature primitives (\texttt{dnd-kit}) with discrete 50-minute snap grids to avoid continuous-time coordinate bugs.
+    \item \textbf{Scope Drift:} Maintain strict exclusion of multi-tenant auth and complex external calendar APIs during the 12-week development window.
+\end{itemize}
+
+\section{Summary}
+This project proposes \textbf{Ops}, a rules-driven life-operating engine that automates personal time-blocking and consistency tracking. By grounding schedule generation in deterministic constraint solving and measuring rolling weekly quotas, the project demonstrates technical depth in algorithmic scheduling, state management, and full-stack software engineering.
+
+\end{document}
