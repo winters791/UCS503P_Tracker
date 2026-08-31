@@ -1,11 +1,19 @@
 # code/tests/test_solver.py
-from app.models import TimeSlot, CommitmentType
+from app.models import Commitment, CommitmentType, ScheduleGrid
+from app.solver import place_fixed_events
 
-def test_create_empty_slot():
-    slot = TimeSlot(day="Monday", slot_index=0)
-    assert slot.occupied_by is None
-    assert slot.slot_index == 0
-    assert slot.day == "Monday"
+def test_place_fixed_event_success():
+    grid = ScheduleGrid.create_empty_week()
+    lecture = Commitment(
+        id="c1",
+        title="Operating Systems Lecture",
+        commitment_type=CommitmentType.FIXED_EVENT,
+        day="Monday",
+        slot_index=2
+    )
 
-def test_commitment_types_exist():
-    assert CommitmentType.FIXED_EVENT == "FIXED_EVENT"
+    updated_grid = place_fixed_events(grid=grid, events=[lecture])
+    
+    # Find Monday slot 2 and verify it is occupied
+    target_slot = next(s for s in updated_grid.slots if s.day == "Monday" and s.slot_index == 2)
+    assert target_slot.occupied_by == "Operating Systems Lecture"
