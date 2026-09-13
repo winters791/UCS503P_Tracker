@@ -51,6 +51,10 @@ class Commitment(Base):
     target_per_week: Mapped[int | None] = mapped_column(Integer, nullable=True)
     duration_blocks: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     priority: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
+    day: Mapped["DayOfWeek | None"] = mapped_column(Enum(DayOfWeek), nullable=True)
+    slot_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    deadline_day: Mapped["DayOfWeek | None"] = mapped_column(Enum(DayOfWeek), nullable=True)
+    deadline_slot: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     scheduled_blocks: Mapped[list["ScheduledBlock"]] = relationship(
         back_populates="commitment", cascade="all, delete-orphan"
