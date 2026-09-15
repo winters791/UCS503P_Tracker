@@ -13,7 +13,7 @@ export function BlockCard({ slot, onClick }: BlockCardProps) {
   const blockId = slot.block_id!;
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: blockId,
-    data: { slot },
+    data: { kind: "block", slot },
   });
 
   const style = transform
@@ -31,7 +31,7 @@ export function BlockCard({ slot, onClick }: BlockCardProps) {
       {...attributes}
       onClick={onClick}
       title={`${slot.commitment_title} (${COMMITMENT_TYPE_LABEL[slot.commitment_type!]})`}
-      className={`w-full h-full rounded-md border px-1.5 py-1 text-left text-[11px] leading-tight overflow-hidden shadow-sm cursor-grab active:cursor-grabbing transition-opacity ${typeStyle.bg} ${typeStyle.border} ${typeStyle.text} ${statusStyle} ${isDragging ? "opacity-40" : ""}`}
+      className={`w-full h-full rounded-md border px-1.5 py-1 text-left text-[11px] leading-tight overflow-hidden shadow-sm cursor-grab active:cursor-grabbing transition-opacity touch-none ${typeStyle.bg} ${typeStyle.border} ${typeStyle.text} ${statusStyle} ${isDragging ? "opacity-40" : ""}`}
     >
       <div className="flex items-center gap-1">
         <span className={`inline-block w-1.5 h-1.5 rounded-full ${typeStyle.dot}`} />
