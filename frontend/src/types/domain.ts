@@ -68,6 +68,8 @@ export type ScheduledBlockUpdate = Partial<
   Pick<ScheduledBlock, "slot_index" | "day_of_week" | "status" | "actual_start">
 >;
 
+export type ScheduledBlockCreate = Pick<ScheduledBlock, "commitment_id" | "slot_index" | "day_of_week">;
+
 export interface TimeSlot {
   day: DayOfWeek;
   slot_index: number;

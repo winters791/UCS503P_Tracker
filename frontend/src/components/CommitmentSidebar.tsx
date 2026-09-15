@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useAppState } from "../context/AppStateContext";
-import { COMMITMENT_TYPE_LABEL, type Commitment } from "../types/domain";
-import { TYPE_STYLES } from "../utils/blockStyles";
+import type { Commitment } from "../types/domain";
 import { CommitmentFormModal } from "./CommitmentFormModal";
+import { DraggableCommitmentCard } from "./DraggableCommitmentCard";
 
 export function CommitmentSidebar() {
   const { commitments, deleteCommitment, loadingCommitments } = useAppState();
@@ -35,38 +35,19 @@ export function CommitmentSidebar() {
       {!loadingCommitments && commitments.length === 0 && (
         <p className="text-xs text-slate-400">No commitments yet. Add one to get started.</p>
       )}
+      {!loadingCommitments && commitments.length > 0 && (
+        <p className="text-[11px] text-slate-400">Drag a commitment onto the timetable to schedule it.</p>
+      )}
 
       <ul className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto">
-        {commitments.map((c) => {
-          const style = TYPE_STYLES[c.type];
-          return (
-            <li
-              key={c.id}
-              className={`rounded-lg border px-3 py-2 text-sm ${style.bg} ${style.border}`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className={`font-medium truncate ${style.text}`}>{c.title}</p>
-                  <p className="text-[11px] text-slate-600">{COMMITMENT_TYPE_LABEL[c.type]}</p>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    onClick={() => openEdit(c)}
-                    className="text-[11px] font-medium text-slate-600 hover:text-slate-900"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteCommitment(c.id)}
-                    className="text-[11px] font-medium text-red-600 hover:text-red-800"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </li>
-          );
-        })}
+        {commitments.map((c) => (
+          <DraggableCommitmentCard
+            key={c.id}
+            commitment={c}
+            onEdit={() => openEdit(c)}
+            onDelete={() => deleteCommitment(c.id)}
+          />
+        ))}
       </ul>
 
       {showModal && (

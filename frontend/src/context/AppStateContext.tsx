@@ -19,14 +19,23 @@ import type {
   DayOfWeek,
   ExecutionLogCreate,
   ScheduleGrid,
+  ScheduleSlot,
 } from "../types/domain";
 import { BlockStatus } from "../types/domain";
 
-export type InteractionMode = "idle" | "solving" | "dragging" | "reslotting";
+export type InteractionMode = "idle" | "dragging" | "reslotting";
 
-interface MoveResult {
+interface ActionResult {
   ok: boolean;
 }
+
+const EMPTY_SLOT_FIELDS: Omit<ScheduleSlot, "day_of_week" | "slot_index"> = {
+  block_id: null,
+  commitment_id: null,
+  commitment_title: null,
+  commitment_type: null,
+  status: null,
+};
 
 interface AppStateValue {
   commitments: Commitment[];
@@ -34,14 +43,13 @@ interface AppStateValue {
   loadingCommitments: boolean;
   loadingGrid: boolean;
   mode: InteractionMode;
-  lastMovedBlockId: string | null;
   refreshAll: () => Promise<void>;
   createCommitment: (payload: CommitmentCreate) => Promise<boolean>;
   updateCommitment: (id: string, payload: CommitmentUpdate) => Promise<boolean>;
   deleteCommitment: (id: string) => Promise<boolean>;
-  solveSchedule: () => Promise<void>;
   reslotFlexible: () => Promise<void>;
-  moveBlock: (blockId: string, day: DayOfWeek, slotIndex: number) => Promise<MoveResult>;
+  moveBlock: (blockId: string, day: DayOfWeek, slotIndex: number) => Promise<ActionResult>;
+  placeCommitment: (commitmentId: string, day: DayOfWeek, slotIndex: number) => Promise<ActionResult>;
   setBlockStatus: (blockId: string, status: BlockStatus) => Promise<void>;
   logExecution: (payload: ExecutionLogCreate) => Promise<boolean>;
 }
@@ -55,7 +63,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [loadingCommitments, setLoadingCommitments] = useState(false);
   const [loadingGrid, setLoadingGrid] = useState(false);
   const [mode, setMode] = useState<InteractionMode>("idle");
-  const [lastMovedBlockId, setLastMovedBlockId] = useState<string | null>(null);
 
   const refreshCommitments = useCallback(async () => {
     setLoadingCommitments(true);
@@ -133,20 +140,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [refreshAll, pushToast],
   );
 
-  const solveSchedule = useCallback(async () => {
-    setMode("solving");
-    try {
-      const result = await scheduleApi.solve();
-      setGrid(result);
-      pushToast("Weekly schedule generated", "success");
-      result.warnings.forEach((w) => pushToast(w, "error"));
-    } catch (err) {
-      pushToast(extractErrorMessage(err), "error");
-    } finally {
-      setMode("idle");
-    }
-  }, [pushToast]);
-
   const reslotFlexible = useCallback(async () => {
     setMode("reslotting");
     try {
@@ -161,8 +154,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   }, [pushToast]);
 
   const moveBlock = useCallback(
-    async (blockId: string, day: DayOfWeek, slotIndex: number): Promise<MoveResult> => {
+    async (blockId: string, day: DayOfWeek, slotIndex: number): Promise<ActionResult> => {
       if (!grid) return { ok: false };
+
+      const moving = grid.slots.find((s) => s.block_id === blockId);
+      if (!moving) return { ok: false };
+      if (moving.day_of_week === day && moving.slot_index === slotIndex) return { ok: true };
 
       const targetOccupant = grid.slots.find(
         (s) => s.day_of_week === day && s.slot_index === slotIndex,
@@ -176,24 +173,24 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }
 
       const previousGrid = grid;
-      const moving = grid.slots.find((s) => s.block_id === blockId);
-      if (!moving) return { ok: false };
-
+      // Swap cell *contents* between the source and target coordinates —
+      // each ScheduleSlot's own day_of_week/slot_index is the cell's fixed
+      // identity, so those fields must never change, only what occupies it.
       const optimistic: ScheduleGrid = {
         ...grid,
         slots: grid.slots.map((s) => {
-          if (s.block_id === blockId) {
-            return { ...s, day_of_week: day, slot_index: slotIndex };
-          }
           if (s.day_of_week === moving.day_of_week && s.slot_index === moving.slot_index) {
+            return { day_of_week: s.day_of_week, slot_index: s.slot_index, ...EMPTY_SLOT_FIELDS };
+          }
+          if (s.day_of_week === day && s.slot_index === slotIndex) {
             return {
               day_of_week: s.day_of_week,
               slot_index: s.slot_index,
-              block_id: null,
-              commitment_id: null,
-              commitment_title: null,
-              commitment_type: null,
-              status: null,
+              block_id: moving.block_id,
+              commitment_id: moving.commitment_id,
+              commitment_title: moving.commitment_title,
+              commitment_type: moving.commitment_type,
+              status: moving.status,
             };
           }
           return s;
@@ -203,7 +200,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
       try {
         await scheduledBlocksApi.update(blockId, { day_of_week: day, slot_index: slotIndex });
-        setLastMovedBlockId(blockId);
         return { ok: true };
       } catch (err) {
         setGrid(previousGrid);
@@ -212,6 +208,60 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }
     },
     [grid, pushToast],
+  );
+
+  const placeCommitment = useCallback(
+    async (commitmentId: string, day: DayOfWeek, slotIndex: number): Promise<ActionResult> => {
+      if (!grid) return { ok: false };
+
+      const targetOccupant = grid.slots.find(
+        (s) => s.day_of_week === day && s.slot_index === slotIndex,
+      );
+      if (targetOccupant?.block_id) {
+        pushToast(
+          `Slot conflict: ${targetOccupant.commitment_title ?? "another block"} is already there`,
+          "error",
+        );
+        return { ok: false };
+      }
+
+      const commitment = commitments.find((c) => c.id === commitmentId);
+      if (!commitment) return { ok: false };
+
+      try {
+        const block = await scheduledBlocksApi.create({
+          commitment_id: commitmentId,
+          day_of_week: day,
+          slot_index: slotIndex,
+        });
+        setGrid((prev) =>
+          prev
+            ? {
+                ...prev,
+                slots: prev.slots.map((s) =>
+                  s.day_of_week === day && s.slot_index === slotIndex
+                    ? {
+                        day_of_week: s.day_of_week,
+                        slot_index: s.slot_index,
+                        block_id: block.id,
+                        commitment_id: commitment.id,
+                        commitment_title: commitment.title,
+                        commitment_type: commitment.type,
+                        status: block.status,
+                      }
+                    : s,
+                ),
+              }
+            : prev,
+        );
+        pushToast(`Scheduled "${commitment.title}"`, "success");
+        return { ok: true };
+      } catch (err) {
+        pushToast(extractErrorMessage(err), "error");
+        return { ok: false };
+      }
+    },
+    [grid, commitments, pushToast],
   );
 
   const setBlockStatus = useCallback(
@@ -248,14 +298,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       loadingCommitments,
       loadingGrid,
       mode,
-      lastMovedBlockId,
       refreshAll,
       createCommitment,
       updateCommitment,
       deleteCommitment,
-      solveSchedule,
       reslotFlexible,
       moveBlock,
+      placeCommitment,
       setBlockStatus,
       logExecution,
     }),
@@ -265,14 +314,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       loadingCommitments,
       loadingGrid,
       mode,
-      lastMovedBlockId,
       refreshAll,
       createCommitment,
       updateCommitment,
       deleteCommitment,
-      solveSchedule,
       reslotFlexible,
       moveBlock,
+      placeCommitment,
       setBlockStatus,
       logExecution,
     ],
