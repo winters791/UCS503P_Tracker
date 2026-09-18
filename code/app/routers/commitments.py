@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app import db_models, schemas
 from app.database import get_db
+from app.placement import PLACEMENT_FIELDS, auto_place, clear_planned_blocks
 
 router = APIRouter(prefix="/commitments", tags=["commitments"])
 
@@ -12,6 +13,12 @@ router = APIRouter(prefix="/commitments", tags=["commitments"])
 def create_commitment(payload: schemas.CommitmentCreate, db: Session = Depends(get_db)):
     commitment = db_models.Commitment(**payload.model_dump())
     db.add(commitment)
+    db.flush()
+    try:
+        auto_place(db, commitment)
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     db.commit()
     db.refresh(commitment)
     return commitment
@@ -37,8 +44,19 @@ def update_commitment(
     commitment = db.get(db_models.Commitment, commitment_id)
     if commitment is None:
         raise HTTPException(status_code=404, detail="Commitment not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(commitment, field, value)
+    db.flush()
+    # Only re-place when something that affects placement changed - a title
+    # edit must not move blocks the user has dragged into position.
+    if PLACEMENT_FIELDS & changes.keys():
+        clear_planned_blocks(db, commitment)
+        try:
+            auto_place(db, commitment)
+        except ValueError as exc:
+            db.rollback()
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
     db.commit()
     db.refresh(commitment)
     return commitment

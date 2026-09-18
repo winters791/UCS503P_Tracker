@@ -81,4 +81,14 @@ fi
 
 echo
 echo "Ops is running. Press Ctrl+C to stop both servers."
-wait
+# Exit (and clean up the other server) as soon as either one dies, instead of
+# hanging with half the stack up. Polling keeps this working on macOS bash 3.2.
+while :; do
+  for pid in "${PIDS[@]}"; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "A server process exited unexpectedly."
+      exit 1
+    fi
+  done
+  sleep 1
+done

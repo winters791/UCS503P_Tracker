@@ -99,7 +99,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     async (payload: CommitmentCreate) => {
       try {
         await commitmentsApi.create(payload);
-        await refreshCommitments();
+        // Saving can auto-place blocks (fixed events, quotas, deadlines), so
+        // the grid needs refreshing too, not just the sidebar.
+        await refreshAll();
         pushToast(`Created "${payload.title}"`, "success");
         return true;
       } catch (err) {
@@ -107,14 +109,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [refreshCommitments, pushToast],
+    [refreshAll, pushToast],
   );
 
   const updateCommitment = useCallback(
     async (id: string, payload: CommitmentUpdate) => {
       try {
         await commitmentsApi.update(id, payload);
-        await refreshCommitments();
+        await refreshAll();
         pushToast("Commitment updated", "success");
         return true;
       } catch (err) {
@@ -122,7 +124,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [refreshCommitments, pushToast],
+    [refreshAll, pushToast],
   );
 
   const deleteCommitment = useCallback(
