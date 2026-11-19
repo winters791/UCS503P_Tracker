@@ -7,7 +7,7 @@ from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Tex
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
-from app.models import CommitmentType
+from app.models import CommitmentType, RuleType
 
 
 def _uuid() -> str:
@@ -29,12 +29,6 @@ class BlockStatus(str, enum.Enum):
     COMPLETED = "COMPLETED"
     MISSED = "MISSED"
     SKIPPED = "SKIPPED"
-
-
-class RuleType(str, enum.Enum):
-    TIME_OF_DAY_AFFINITY = "TIME_OF_DAY_AFFINITY"
-    SEPARATION = "SEPARATION"
-    ENERGY_TIERING = "ENERGY_TIERING"
 
 
 class Strictness(str, enum.Enum):
@@ -75,6 +69,8 @@ class ScheduledBlock(Base):
         Enum(BlockStatus), nullable=False, default=BlockStatus.PLANNED
     )
     actual_start: Mapped[time | None] = mapped_column(Time, nullable=True)
+    # When status was last set; it only counts during that week (see weeks.py).
+    status_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     commitment: Mapped["Commitment"] = relationship(back_populates="scheduled_blocks")
     execution_logs: Mapped[list["ExecutionLog"]] = relationship(

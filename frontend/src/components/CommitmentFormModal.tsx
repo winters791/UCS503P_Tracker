@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAppState } from "../context/AppStateContext";
+import { RulesEditor } from "./RulesEditor";
 import {
   CommitmentType,
   DayOfWeek,
@@ -57,7 +58,7 @@ export function CommitmentFormModal({ editing, onClose }: CommitmentFormModalPro
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
         <h2 className="text-lg font-semibold text-slate-900 mb-4">
           {editing ? "Edit Commitment" : "New Commitment"}
         </h2>
@@ -198,6 +199,16 @@ export function CommitmentFormModal({ editing, onClose }: CommitmentFormModalPro
                 />
               </label>
             </div>
+          )}
+
+          {editing && form.type === editing.type && <RulesEditor commitment={editing} />}
+          {editing && form.type !== editing.type && (
+            <p className="text-[11px] text-slate-400">Save the type change before editing scheduling rules.</p>
+          )}
+          {!editing && (
+            <p className="text-[11px] text-slate-400">
+              Create the commitment first, then edit it to add scheduling rules.
+            </p>
           )}
 
           <div className="mt-2 flex justify-end gap-2">

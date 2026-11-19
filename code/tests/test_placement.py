@@ -75,8 +75,9 @@ def test_update_moves_block_when_placement_changes_but_not_on_title_edit(client)
     client.patch(f"/commitments/{cid}", json={"title": "Lab (renamed)"})
     assert _blocks(client, cid)[0]["id"] == block_id
 
-    # Changing the day re-places it.
+    # Changing the day re-places it - by moving the same row, so any
+    # execution logs on it stay attached.
     client.patch(f"/commitments/{cid}", json={"day": "Friday"})
     blocks = _blocks(client, cid)
     assert [(b["day_of_week"], b["slot_index"]) for b in blocks] == [("Friday", 2)]
-    assert blocks[0]["id"] != block_id
+    assert blocks[0]["id"] == block_id

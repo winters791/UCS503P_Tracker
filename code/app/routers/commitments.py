@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app import db_models, schemas
 from app.database import get_db
-from app.placement import PLACEMENT_FIELDS, auto_place, clear_planned_blocks
+from app.placement import PLACEMENT_FIELDS, auto_place, readable_messages
 
 router = APIRouter(prefix="/commitments", tags=["commitments"])
 
@@ -17,8 +17,9 @@ def create_commitment(payload: schemas.CommitmentCreate, db: Session = Depends(g
     try:
         auto_place(db, commitment)
     except ValueError as exc:
+        detail = readable_messages(db, [str(exc)])[0]
         db.rollback()
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise HTTPException(status_code=409, detail=detail) from exc
     db.commit()
     db.refresh(commitment)
     return commitment
@@ -51,12 +52,12 @@ def update_commitment(
     # Only re-place when something that affects placement changed - a title
     # edit must not move blocks the user has dragged into position.
     if PLACEMENT_FIELDS & changes.keys():
-        clear_planned_blocks(db, commitment)
         try:
             auto_place(db, commitment)
         except ValueError as exc:
+            detail = readable_messages(db, [str(exc)])[0]
             db.rollback()
-            raise HTTPException(status_code=409, detail=str(exc)) from exc
+            raise HTTPException(status_code=409, detail=detail) from exc
     db.commit()
     db.refresh(commitment)
     return commitment

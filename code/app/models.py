@@ -9,6 +9,18 @@ class CommitmentType(str, Enum):
     FLEXIBLE_TASK = "FLEXIBLE_TASK"
     HARD_DEADLINE = "HARD_DEADLINE"
 
+class RuleType(str, Enum):
+    TIME_OF_DAY_AFFINITY = "TIME_OF_DAY_AFFINITY"
+    SEPARATION = "SEPARATION"
+    ENERGY_TIERING = "ENERGY_TIERING"
+
+class SchedulingRule(BaseModel):
+    """Solver-side view of a ConstraintRule. What target_slot means depends on
+    the kind - see the rule helpers in solver.py."""
+    rule_type: RuleType
+    target_slot: Optional[int] = None
+    hard: bool = False
+
 class Commitment(BaseModel):
     id: str
     title: str
@@ -20,6 +32,7 @@ class Commitment(BaseModel):
     deadline_slot: Optional[int] = None         # Slot index cutoff (0 to 11)
     required_blocks: Optional[int] = 1
     priority: Optional[int] = 100 #lower value = higher priority
+    rules: List[SchedulingRule] = Field(default_factory=list)
 
 class TimeSlot(BaseModel):
     day: str
@@ -28,6 +41,7 @@ class TimeSlot(BaseModel):
 
 class ScheduleGrid(BaseModel):
     slots: List[TimeSlot] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
 
     @classmethod
     def create_empty_week(cls) -> "ScheduleGrid":

@@ -10,12 +10,15 @@ import {
 import { commitmentsApi } from "../api/commitments";
 import { scheduleApi, scheduledBlocksApi } from "../api/schedule";
 import { executionLogsApi } from "../api/executionLogs";
+import { constraintRulesApi } from "../api/constraintRules";
 import { extractErrorMessage } from "../api/client";
 import { useToast } from "./ToastContext";
 import type {
   Commitment,
   CommitmentCreate,
   CommitmentUpdate,
+  ConstraintRule,
+  ConstraintRuleCreate,
   DayOfWeek,
   ExecutionLogCreate,
   ScheduleGrid,
@@ -39,6 +42,7 @@ const EMPTY_SLOT_FIELDS: Omit<ScheduleSlot, "day_of_week" | "slot_index"> = {
 
 interface AppStateValue {
   commitments: Commitment[];
+  rules: ConstraintRule[];
   grid: ScheduleGrid | null;
   loadingCommitments: boolean;
   loadingGrid: boolean;
@@ -52,6 +56,8 @@ interface AppStateValue {
   placeCommitment: (commitmentId: string, day: DayOfWeek, slotIndex: number) => Promise<ActionResult>;
   setBlockStatus: (blockId: string, status: BlockStatus) => Promise<void>;
   logExecution: (payload: ExecutionLogCreate) => Promise<boolean>;
+  createRule: (payload: ConstraintRuleCreate) => Promise<boolean>;
+  deleteRule: (id: string) => Promise<boolean>;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -59,6 +65,7 @@ const AppStateContext = createContext<AppStateValue | null>(null);
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const { pushToast } = useToast();
   const [commitments, setCommitments] = useState<Commitment[]>([]);
+  const [rules, setRules] = useState<ConstraintRule[]>([]);
   const [grid, setGrid] = useState<ScheduleGrid | null>(null);
   const [loadingCommitments, setLoadingCommitments] = useState(false);
   const [loadingGrid, setLoadingGrid] = useState(false);
@@ -67,7 +74,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const refreshCommitments = useCallback(async () => {
     setLoadingCommitments(true);
     try {
-      setCommitments(await commitmentsApi.list());
+      const [loadedCommitments, loadedRules] = await Promise.all([
+        commitmentsApi.list(),
+        constraintRulesApi.list(),
+      ]);
+      setCommitments(loadedCommitments);
+      setRules(loadedRules);
     } catch (err) {
       pushToast(extractErrorMessage(err), "error");
     } finally {
@@ -148,6 +160,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const result = await scheduleApi.reslotFlexible();
       setGrid(result);
       pushToast("Flexible tasks re-slotted around your change", "success");
+      result.warnings.forEach((w) => pushToast(w, "info"));
     } catch (err) {
       pushToast(extractErrorMessage(err), "error");
     } finally {
@@ -293,9 +306,42 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [pushToast, setBlockStatus],
   );
 
+  const createRule = useCallback(
+    async (payload: ConstraintRuleCreate) => {
+      try {
+        const saved = await constraintRulesApi.create(payload);
+        // Rules re-place the commitment's blocks server-side.
+        await refreshAll();
+        pushToast("Rule added", "success");
+        saved.warnings.forEach((w) => pushToast(w, "info"));
+        return true;
+      } catch (err) {
+        pushToast(extractErrorMessage(err), "error");
+        return false;
+      }
+    },
+    [refreshAll, pushToast],
+  );
+
+  const deleteRule = useCallback(
+    async (id: string) => {
+      try {
+        await constraintRulesApi.remove(id);
+        await refreshAll();
+        pushToast("Rule removed", "success");
+        return true;
+      } catch (err) {
+        pushToast(extractErrorMessage(err), "error");
+        return false;
+      }
+    },
+    [refreshAll, pushToast],
+  );
+
   const value = useMemo<AppStateValue>(
     () => ({
       commitments,
+      rules,
       grid,
       loadingCommitments,
       loadingGrid,
@@ -309,9 +355,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       placeCommitment,
       setBlockStatus,
       logExecution,
+      createRule,
+      deleteRule,
     }),
     [
       commitments,
+      rules,
       grid,
       loadingCommitments,
       loadingGrid,
@@ -325,6 +374,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       placeCommitment,
       setBlockStatus,
       logExecution,
+      createRule,
+      deleteRule,
     ],
   );
 

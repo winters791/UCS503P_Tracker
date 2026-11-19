@@ -108,3 +108,73 @@ export const COMMITMENT_TYPE_LABEL: Record<CommitmentType, string> = {
   [CommitmentType.FLEXIBLE_TASK]: "Flexible Task",
   [CommitmentType.HARD_DEADLINE]: "Hard Deadline",
 };
+
+export const RuleType = {
+  TIME_OF_DAY_AFFINITY: "TIME_OF_DAY_AFFINITY",
+  ENERGY_TIERING: "ENERGY_TIERING",
+  SEPARATION: "SEPARATION",
+} as const;
+export type RuleType = (typeof RuleType)[keyof typeof RuleType];
+
+export const Strictness = {
+  HARD: "HARD",
+  SOFT: "SOFT",
+} as const;
+export type Strictness = (typeof Strictness)[keyof typeof Strictness];
+
+// target_slot means something different per rule type - see code/app/solver.py:
+//   TIME_OF_DAY_AFFINITY  time band (0 morning, 1 afternoon, 2 evening)
+//   ENERGY_TIERING        latest slot index allowed (null = 3)
+//   SEPARATION            rest days between sessions (recurring quotas only)
+export interface ConstraintRule {
+  id: string;
+  commitment_id: string;
+  rule_type: RuleType;
+  target_slot: number | null;
+  strictness: Strictness;
+}
+
+export type ConstraintRuleCreate = Omit<ConstraintRule, "id">;
+
+export interface ConstraintRuleWriteResult extends ConstraintRule {
+  warnings: string[];
+}
+
+export interface WeekResult {
+  week_start: string;
+  completed: number;
+  met: boolean;
+}
+
+export interface QuotaConsistency {
+  commitment_id: string;
+  title: string;
+  target: number;
+  completed_this_week: number;
+  streak: number;
+  history: WeekResult[];
+}
+
+export interface ConsistencyReport {
+  week_start: string;
+  quotas: QuotaConsistency[];
+}
+
+export interface Tally {
+  planned: number;
+  completed: number;
+  missed: number;
+  not_logged: number;
+  upcoming: number;
+  due: number;
+}
+
+export interface RetrospectiveReport {
+  week_start: string;
+  week_end: string;
+  totals: Tally;
+  by_commitment: { commitment_id: string; title: string; type: CommitmentType; tally: Tally }[];
+  by_day: Tally[];
+  quota_results: { title: string; completed: number; target: number; met: boolean }[];
+  highlights: string[];
+}

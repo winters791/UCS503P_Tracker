@@ -2,10 +2,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app import db_models, schemas
+from app import db_models, schemas, weeks
 from app.database import get_db
 
 router = APIRouter(prefix="/scheduled-blocks", tags=["scheduled-blocks"])
+
+
+def _stamp_status(block: db_models.ScheduledBlock) -> None:
+    """A status counts for the week it is set in - see weeks.py."""
+    block.status_updated_at = None if block.status == db_models.BlockStatus.PLANNED else weeks.utc_stamp()
 
 
 @router.post("", response_model=schemas.ScheduledBlockRead, status_code=201)
@@ -13,6 +18,7 @@ def create_scheduled_block(payload: schemas.ScheduledBlockCreate, db: Session = 
     if db.get(db_models.Commitment, payload.commitment_id) is None:
         raise HTTPException(status_code=404, detail="Commitment not found")
     block = db_models.ScheduledBlock(**payload.model_dump())
+    _stamp_status(block)
     db.add(block)
     db.commit()
     db.refresh(block)
@@ -39,8 +45,11 @@ def update_scheduled_block(
     block = db.get(db_models.ScheduledBlock, block_id)
     if block is None:
         raise HTTPException(status_code=404, detail="Scheduled block not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(block, field, value)
+    if "status" in changes:
+        _stamp_status(block)
     db.commit()
     db.refresh(block)
     return block

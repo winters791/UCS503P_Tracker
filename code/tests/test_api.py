@@ -95,7 +95,7 @@ def test_execution_log_requires_existing_block(client):
 
 def test_full_entity_chain(client):
     commitment_id = client.post(
-        "/commitments", json={"title": "Standup", "type": "FIXED_EVENT"}
+        "/commitments", json={"title": "Reading", "type": "FLEXIBLE_TASK"}
     ).json()["id"]
 
     block_response = client.post(

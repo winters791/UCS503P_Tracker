@@ -1,5 +1,5 @@
 # code/app/schemas.py
-from datetime import datetime, time
+from datetime import date, datetime, time
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
@@ -87,6 +87,11 @@ class ConstraintRuleRead(ConstraintRuleBase):
     id: str
 
 
+class ConstraintRuleWriteResult(ConstraintRuleRead):
+    """A saved rule plus anything the re-placement had to compromise on."""
+    warnings: list[str] = []
+
+
 class ExecutionLogBase(BaseModel):
     block_id: str
     completed: bool = False
@@ -121,3 +126,62 @@ class ScheduleSlotOut(BaseModel):
 class ScheduleSolveResult(BaseModel):
     slots: list[ScheduleSlotOut]
     warnings: list[str] = []
+
+
+class WeekResultOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    week_start: date
+    completed: int
+    met: bool
+
+
+class QuotaConsistencyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    commitment_id: str
+    title: str
+    target: int
+    completed_this_week: int
+    streak: int
+    history: list[WeekResultOut]
+
+
+class ConsistencyReport(BaseModel):
+    week_start: date
+    quotas: list[QuotaConsistencyOut]
+
+
+class TallyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    planned: int
+    completed: int
+    missed: int
+    not_logged: int
+    upcoming: int
+    due: int
+
+
+class CommitmentTallyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    commitment_id: str
+    title: str
+    type: CommitmentType
+    tally: TallyOut
+
+
+class QuotaResultOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    title: str
+    completed: int
+    target: int
+    met: bool
+
+
+class RetrospectiveReport(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    week_start: date
+    week_end: date
+    totals: TallyOut
+    by_commitment: list[CommitmentTallyOut]
+    by_day: list[TallyOut]
+    quota_results: list[QuotaResultOut]
+    highlights: list[str]
