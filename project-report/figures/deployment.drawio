@@ -1,0 +1,102 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="ops-deployment" name="Deployment Diagram">
+    <mxGraphModel dx="1300" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1280" pageHeight="820" background="#F4F4F4" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="Deployment Diagram: OPS-System Tracker" style="text;html=1;align=center;fontSize=24;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="230" y="20" width="820" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Client device -->
+        <mxCell id="client" value="&amp;lt;&amp;lt;device&amp;gt;&amp;gt;&lt;br&gt;&lt;b&gt;User Workstation&lt;/b&gt; (PC / Laptop)" style="shape=cube;size=16;direction=south;html=1;whiteSpace=wrap;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=12;spacingTop=18;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.5;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="580" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="browser" value="&amp;lt;&amp;lt;execution environment&amp;gt;&amp;gt;&lt;br&gt;&lt;b&gt;Web Browser&lt;/b&gt; (Chrome / Firefox / Safari)" style="shape=cube;size=12;direction=south;html=1;whiteSpace=wrap;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=10;spacingTop=14;fillColor=#FFFFFF;strokeColor=#000000;fontSize=13;" vertex="1" parent="client">
+          <mxGeometry x="20" y="70" width="530" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="spa" value="&lt;font style=&quot;font-size:11px&quot;&gt;&amp;lt;&amp;lt;artifact&amp;gt;&amp;gt;&lt;/font&gt;&lt;br&gt;&lt;b&gt;Ops SPA&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;React 18 + TypeScript&lt;br&gt;dnd-kit · Tailwind CSS&lt;/font&gt;" style="shape=note;size=14;html=1;whiteSpace=wrap;fillColor=#AD7D21;strokeColor=#000000;fontColor=#FFFFFF;fontSize=13;" vertex="1" parent="browser">
+          <mxGeometry x="20" y="60" width="240" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="axios" value="&lt;font style=&quot;font-size:11px&quot;&gt;&amp;lt;&amp;lt;artifact&amp;gt;&amp;gt;&lt;/font&gt;&lt;br&gt;&lt;b&gt;API Client&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;axios (src/api/*.ts)&lt;/font&gt;" style="shape=note;size=14;html=1;whiteSpace=wrap;fillColor=#AD7D21;strokeColor=#000000;fontColor=#FFFFFF;fontSize=13;" vertex="1" parent="browser">
+          <mxGeometry x="290" y="60" width="210" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_spa_axios" value="uses" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="browser" source="spa" target="axios">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Note -->
+        <mxCell id="note" value="&lt;b&gt;Deployment notes&lt;/b&gt;&lt;br&gt;• &lt;i&gt;run.sh&lt;/i&gt; applies Alembic migrations, then starts Uvicorn (:8000) and Vite (:5173) on the same host.&lt;br&gt;• The browser may run on the server itself (localhost) or on any device in the same LAN.&lt;br&gt;• The SPA loads from :5173 and calls the REST API on :8000 directly (CORS enabled)." style="shape=note;size=18;html=1;whiteSpace=wrap;align=left;verticalAlign=top;spacingLeft=10;spacingTop=6;fillColor=#FFFFFF;strokeColor=#000000;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="700" y="100" width="520" height="160" as="geometry"/>
+        </mxCell>
+
+        <!-- Network -->
+        <mxCell id="net" value="&amp;lt;&amp;lt;network&amp;gt;&amp;gt;  TCP/IP — localhost / LAN (HTTP)" style="shape=cube;size=8;direction=south;html=1;whiteSpace=wrap;align=left;spacingLeft=16;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.5;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="400" width="1160" height="36" as="geometry"/>
+        </mxCell>
+
+        <!-- Server device -->
+        <mxCell id="server" value="&amp;lt;&amp;lt;device&amp;gt;&amp;gt;&lt;br&gt;&lt;b&gt;Application Server&lt;/b&gt;&lt;br&gt;(macOS / Linux host)" style="shape=cube;size=16;direction=south;html=1;whiteSpace=wrap;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=12;spacingTop=18;fillColor=#FFFFFF;strokeColor=#000000;strokeWidth=1.5;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="60" y="500" width="1160" height="300" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="vite" value="&amp;lt;&amp;lt;execution environment&amp;gt;&amp;gt;&lt;br&gt;&lt;b&gt;Node.js · Vite Dev Server&lt;/b&gt;&lt;br&gt;port 5173" style="shape=cube;size=12;direction=south;html=1;whiteSpace=wrap;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=10;spacingTop=14;fillColor=#FFFFFF;strokeColor=#000000;fontSize=13;" vertex="1" parent="server">
+          <mxGeometry x="20" y="70" width="300" height="210" as="geometry"/>
+        </mxCell>
+        <mxCell id="bundle" value="&lt;font style=&quot;font-size:11px&quot;&gt;&amp;lt;&amp;lt;artifact&amp;gt;&amp;gt;&lt;/font&gt;&lt;br&gt;&lt;b&gt;frontend/&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;index.html, src/*.tsx&lt;br&gt;→ ES modules / CSS&lt;/font&gt;" style="shape=note;size=14;html=1;whiteSpace=wrap;fillColor=#AD7D21;strokeColor=#000000;fontColor=#FFFFFF;fontSize=13;" vertex="1" parent="vite">
+          <mxGeometry x="30" y="90" width="240" height="95" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="uvicorn" value="&amp;lt;&amp;lt;execution environment&amp;gt;&amp;gt;&lt;br&gt;&lt;b&gt;Python 3 venv · Uvicorn (ASGI)&lt;/b&gt;&lt;br&gt;port 8000" style="shape=cube;size=12;direction=south;html=1;whiteSpace=wrap;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=10;spacingTop=14;fillColor=#FFFFFF;strokeColor=#000000;fontSize=13;" vertex="1" parent="server">
+          <mxGeometry x="340" y="70" width="450" height="210" as="geometry"/>
+        </mxCell>
+        <mxCell id="fastapi" value="&lt;font style=&quot;font-size:11px&quot;&gt;&amp;lt;&amp;lt;artifact&amp;gt;&amp;gt;&lt;/font&gt;&lt;br&gt;&lt;b&gt;app.main:app&lt;/b&gt; (FastAPI)&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;routers: commitments, scheduled_blocks,&lt;br&gt;constraint_rules, execution_logs,&lt;br&gt;schedule, insights&lt;/font&gt;" style="shape=note;size=14;html=1;whiteSpace=wrap;fillColor=#AD7D21;strokeColor=#000000;fontColor=#FFFFFF;fontSize=13;" vertex="1" parent="uvicorn">
+          <mxGeometry x="20" y="90" width="240" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="logic" value="&lt;font style=&quot;font-size:11px&quot;&gt;&amp;lt;&amp;lt;artifact&amp;gt;&amp;gt;&lt;/font&gt;&lt;br&gt;&lt;b&gt;Domain logic&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;solver.py, placement.py,&lt;br&gt;insights.py, weeks.py&lt;/font&gt;" style="shape=note;size=14;html=1;whiteSpace=wrap;fillColor=#8A5A10;strokeColor=#000000;fontColor=#FFFFFF;fontSize=13;" vertex="1" parent="uvicorn">
+          <mxGeometry x="268" y="90" width="166" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_api_logic" value="uses" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;fontSize=11;labelBackgroundColor=#FFFFFF;" edge="1" parent="uvicorn" source="fastapi" target="logic">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="sqlite" value="&amp;lt;&amp;lt;database&amp;gt;&amp;gt;&lt;br&gt;&lt;b&gt;SQLite 3&lt;/b&gt;&lt;br&gt;embedded, file-based" style="shape=cube;size=12;direction=south;html=1;whiteSpace=wrap;container=1;collapsible=0;verticalAlign=top;align=left;spacingLeft=10;spacingTop=14;fillColor=#FFFFFF;strokeColor=#000000;fontSize=13;" vertex="1" parent="server">
+          <mxGeometry x="900" y="70" width="240" height="210" as="geometry"/>
+        </mxCell>
+        <mxCell id="dbfile" value="&lt;font style=&quot;font-size:11px&quot;&gt;&amp;lt;&amp;lt;artifact&amp;gt;&amp;gt;&lt;/font&gt;&lt;br&gt;&lt;b&gt;ops.db&lt;/b&gt;" style="shape=cylinder3;size=8;boundedLbl=1;html=1;whiteSpace=wrap;fillColor=#AD7D21;strokeColor=#000000;fontColor=#FFFFFF;fontSize=13;" vertex="1" parent="sqlite">
+          <mxGeometry x="20" y="85" width="95" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="alembic" value="&lt;font style=&quot;font-size:11px&quot;&gt;&amp;lt;&amp;lt;artifact&amp;gt;&amp;gt;&lt;/font&gt;&lt;br&gt;&lt;b&gt;Alembic&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:11px&quot;&gt;migrations&lt;/font&gt;" style="shape=note;size=12;html=1;whiteSpace=wrap;fillColor=#8A5A10;strokeColor=#000000;fontColor=#FFFFFF;fontSize=13;" vertex="1" parent="sqlite">
+          <mxGeometry x="130" y="95" width="95" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_alembic_db" value="" style="endArrow=open;dashed=1;html=1;strokeColor=#000000;" edge="1" parent="sqlite" source="alembic" target="dbfile">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Communication paths -->
+        <mxCell id="c_client_net" value="HTTP" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.5;fontSize=12;labelBackgroundColor=#F4F4F4;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="340" y="340" as="sourcePoint"/>
+            <mxPoint x="340" y="400" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_net_vite" value="HTTP :5173&lt;br&gt;HTML / JS / CSS" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.5;fontSize=12;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry x="-0.55" relative="1" as="geometry">
+            <mxPoint x="300" y="436" as="sourcePoint"/>
+            <mxPoint x="300" y="570" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_net_api" value="HTTP :8000&lt;br&gt;REST / JSON (CORS)" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.5;fontSize=12;labelBackgroundColor=#FFFFFF;" edge="1" parent="1">
+          <mxGeometry x="-0.55" relative="1" as="geometry">
+            <mxPoint x="625" y="436" as="sourcePoint"/>
+            <mxPoint x="625" y="570" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="c_api_db" value="SQLAlchemy ORM&lt;br&gt;(file I/O)" style="endArrow=none;html=1;strokeColor=#000000;strokeWidth=1.5;fontSize=12;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="uvicorn" target="sqlite">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
