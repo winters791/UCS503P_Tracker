@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 # One-command launcher for Ops: migrates the DB, starts the FastAPI backend
 # and the Vite frontend, opens the browser, and shuts both down on Ctrl+C.
+#
+#   ./run.sh          start with whatever is in the database
+#   ./run.sh --seed   wipe the database and load the demo week first
 set -euo pipefail
+
+SEED=0
+for arg in "$@"; do
+  case "$arg" in
+    --seed) SEED=1 ;;
+    -h|--help) sed -n '2,6p' "$0"; exit 0 ;;
+    *) echo "Unknown option: $arg (try --help)"; exit 1 ;;
+  esac
+done
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VENV="$ROOT/venv/bin"
@@ -42,6 +54,11 @@ done
 # --- database ----------------------------------------------------------------
 echo "Applying database migrations..."
 (cd "$ROOT/code" && "$VENV/alembic" upgrade head)
+
+if [ "$SEED" = 1 ]; then
+  echo "Loading demo week..."
+  (cd "$ROOT/code" && "$VENV/python" seed.py --reset)
+fi
 
 # --- backend -----------------------------------------------------------------
 echo "Starting backend on :$BACKEND_PORT ..."

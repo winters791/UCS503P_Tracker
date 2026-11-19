@@ -132,7 +132,7 @@ Ops sits in the sweet spot for an engineering project: straightforward CRUD oper
 
 ```
 +-----------------------------------------------------------------------------+
-| Month 1: Data Contracts & Core Constraint Engine                           |
+| Month 1: Data Contracts & Core Constraint Engine            [COMPLETE]     |
 | - Fast-path SQLite schema setup via SQLAlchemy + Alembic                    |
 | - Standalone Python scheduling module with exhaustive pytest test suites   |
 | - REST API scaffolding (Commitments, Slots, Rules, Execution Logs)          |
@@ -140,7 +140,7 @@ Ops sits in the sweet spot for an engineering project: straightforward CRUD oper
                                        |
                                        v
 +-----------------------------------------------------------------------------+
-| Month 2: Interactive Grid Canvas & Solver Integration                       |
+| Month 2: Interactive Grid Canvas & Solver Integration       [COMPLETE]     |
 | - React 50-minute block timeline layout with dnd-kit drag-and-drop          |
 | - Bi-directional state syncing: manual overrides trigger re-slotting engine|
 | - Real-time slot collision detection and conflict visualizers               |
@@ -148,7 +148,7 @@ Ops sits in the sweet spot for an engineering project: straightforward CRUD oper
                                        |
                                        v
 +-----------------------------------------------------------------------------+
-| Month 3: Rolling Metrics, Retrospective Engine & Polish                     |
+| Month 3: Rolling Metrics, Retrospective Engine & Polish     [COMPLETE]     |
 | - Weekly review generator: planned vs. executed delta analysis              |
 | - Streak resilience calculators & historic pattern aggregations             |
 | - End-to-end local deployment via Docker Compose                            |
@@ -181,22 +181,31 @@ To maintain high development velocity and produce a robust single-user tool with
 
 ---
 
-## 9. Quickstart (Development)
+## 9. Quickstart
+
+### Option A: one command (local dev)
 
 ```bash
-# Clone the repository
-git clone https://github.com/username/ops.git
-cd ops
-
-# Backend Setup
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-pytest tests/ -v
-uvicorn app.main:app --reload --port 8000
-
-# Frontend Setup (in a separate terminal)
-cd ../frontend
-npm install
-npm run dev
+python3 -m venv venv && venv/bin/pip install -r code/requirements.txt
+./run.sh --seed      # migrate, load the demo week, start API (:8000) + UI (:5173)
 ```
+
+### Option B: Docker Compose
+
+```bash
+docker compose up --build
+docker compose exec backend python seed.py --reset   # optional demo data
+```
+
+UI at http://localhost:5173, API docs at http://localhost:8000/docs. The SQLite
+database persists in the `ops-data` volume.
+
+### Tests
+
+```bash
+cd code && ../venv/bin/python -m pytest -q      # 47 backend tests
+cd ../frontend && npm run build                 # typecheck + production build
+```
+
+Configuration: `OPS_DATABASE_URL` (default `sqlite:///./ops.db`) and
+`OPS_CORS_ORIGINS` (comma-separated, default the Vite dev origins).
