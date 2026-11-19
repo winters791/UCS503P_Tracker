@@ -219,21 +219,38 @@ def place_flexible_tasks(grid: ScheduleGrid, tasks: List[Commitment]) -> Schedul
     A task that does not fully fit is reported in grid.warnings rather than
     failing the whole week - it is backlog, not an obligation."""
     sorted_tasks = sorted(tasks, key=lambda t: t.priority or 100)
-    slot_major = sorted(grid.slots, key=lambda s: (s.slot_index, DAY_INDEX.get(s.day, 0)))
+    flex_titles = {t.title for t in tasks}
 
     for task in sorted_tasks:
         needed = task.required_blocks or 1
 
         def place(rules: List[SchedulingRule], remaining: int) -> int:
+            # Spread the week: each block goes on the day holding the fewest
+            # flexible blocks so far, then the fewest of this same task, then
+            # the lightest day overall (fixed events count), then the earliest
+            # day. Within the chosen day the earliest allowed slot is used.
             window = _allowed_slots(rules)
-            order: List[TimeSlot] = slot_major if _earliest_first(rules) else grid.slots
             placed = 0
-            for slot in order:
-                if placed >= remaining:
+            while placed < remaining:
+                load = {d: 0 for d in DAYS}
+                own = {d: 0 for d in DAYS}
+                flex = {d: 0 for d in DAYS}
+                free: dict = {}
+                for slot in grid.slots:
+                    if slot.occupied_by is not None:
+                        load[slot.day] += 1
+                        if slot.occupied_by in flex_titles:
+                            flex[slot.day] += 1
+                        if slot.occupied_by == task.title:
+                            own[slot.day] += 1
+                    elif slot.slot_index in window:
+                        if slot.day not in free or slot.slot_index < free[slot.day].slot_index:
+                            free[slot.day] = slot
+                if not free:
                     break
-                if slot.occupied_by is None and slot.slot_index in window:
-                    slot.occupied_by = task.title
-                    placed += 1
+                day = min(free, key=lambda d: (flex[d], own[d], load[d], DAY_INDEX[d]))
+                free[day].occupied_by = task.title
+                placed += 1
             return placed
 
         placed = _already_placed(grid, task)

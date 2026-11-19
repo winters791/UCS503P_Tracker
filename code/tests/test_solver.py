@@ -26,14 +26,50 @@ def test_place_flexible_tasks_priority():
 
     updated_grid = place_flexible_tasks(grid=grid, tasks=[reading, dsa])
 
-    # Verification: High priority task fills Monday slot 0 and 1
-    mon_0 = next(s for s in updated_grid.slots if s.day == "Monday" and s.slot_index == 0)
-    mon_1 = next(s for s in updated_grid.slots if s.day == "Monday" and s.slot_index == 1)
-    mon_2 = next(s for s in updated_grid.slots if s.day == "Monday" and s.slot_index == 2)
+    def cell(day, idx):
+        return next(s for s in updated_grid.slots if s.day == day and s.slot_index == idx).occupied_by
 
-    assert mon_0.occupied_by == "DSA Practice"
-    assert mon_1.occupied_by == "DSA Practice"
-    assert mon_2.occupied_by == "Deep Reading"
+    # Highest priority is placed first, and its blocks are spread over days
+    assert cell("Monday", 0) == "DSA Practice"
+    assert cell("Tuesday", 0) == "DSA Practice"
+    assert cell("Wednesday", 0) == "Deep Reading"
+
+
+def _days_of(grid, title):
+    return [s.day for s in grid.slots if s.occupied_by == title]
+
+
+def test_flexible_tasks_spread_evenly_across_week():
+    grid = ScheduleGrid.create_empty_week()
+    tasks = [
+        Commitment(id=f"f{i}", title=f"Task {i}", commitment_type=CommitmentType.FLEXIBLE_TASK,
+                   priority=i, required_blocks=2)
+        for i in range(1, 8)
+    ]
+    place_flexible_tasks(grid, tasks)
+
+    per_day = {}
+    for s in grid.slots:
+        if s.occupied_by:
+            per_day[s.day] = per_day.get(s.day, 0) + 1
+    assert sum(per_day.values()) == 14
+    assert max(per_day.values()) - min(per_day.values()) <= 1
+    assert len(per_day) == 7
+    for t in tasks:
+        assert len(set(_days_of(grid, t.title))) == 2  # a task never stacks on one day
+
+
+def test_flexible_tasks_avoid_busy_days():
+    grid = ScheduleGrid.create_empty_week()
+    for s in grid.slots:
+        if s.day == "Monday" and s.slot_index < 6:
+            s.occupied_by = "Lecture"  # Monday is already heavy
+    task = Commitment(id="f1", title="Reading", commitment_type=CommitmentType.FLEXIBLE_TASK,
+                      priority=1, required_blocks=3)
+    place_flexible_tasks(grid, [task])
+    days = _days_of(grid, "Reading")
+    assert "Monday" not in days
+    assert len(set(days)) == 3
 
 def test_place_hard_deadlines_backwards():
     grid = ScheduleGrid.create_empty_week()
